@@ -32,7 +32,7 @@
     </div>
     <script>
       var button = document.querySelector('#submit-button');
-      var button = document.querySelector('#refund-button');
+      var refund = document.querySelector('#refund-button');
       
       braintree.dropin.create({
         // Insert your tokenization key here
@@ -68,7 +68,9 @@
             });
           });
         });
-      });
+
+        });
+
     </script>
   </body>
  </html>

@@ -15,6 +15,7 @@ COPY ./server /app
 
 RUN pip install Flask
 
+
 RUN pip install braintree
 
 WORKDIR /app

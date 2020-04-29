@@ -11,7 +11,7 @@
       console.log( "document loaded" );
       $.ajax({ url: "/client_token",
         context: document.body,
-        success: function(){
+        success: function(result){
            alert("Client token created");
         }});
 
@@ -24,50 +24,78 @@
   </head>
   <body>
 
+
     <div id="dropin-wrapper">
-      <div id="checkout-message"></div>
-      <div id="dropin-container"></div>
-      <button id="submit-button">Submit payment</button>
-      <button id="refund-button">Refund payment</button>
+       <div class="input-wrapper amount-wrapper">
+        <input id="amount" name="amount" type="tel" min="1" placeholder="Amount" value="10">
+      </div>
+        <div id="checkout-message"></div>
+        <div id="dropin-container"> 
+        </div>
+      </section>
+
+      <!-- <input type="hidden" id="nonce" name="payment_method_nonce" /> -->
+      <button class="button" type="submit" id="submit-button"><span>Test Transaction</span></button>
+      <button class="refund" type="submit" id="refund-button"><span>Refund Transaction</span></button>
     </div>
+
+
+
+
     <script>
       var button = document.querySelector('#submit-button');
       var refund = document.querySelector('#refund-button');
-      
+      var trans = "123456";
       braintree.dropin.create({
         // Insert your tokenization key here
-        authorization: 'sandbox_7bhynqqb_3q68q4cbb5wyvrhw',
+        authorization: 'sandbox_7bhynqqb_3q68q4cbb5wyvrhw',       
         container: '#dropin-container'
       }, function (createErr, instance) {
         button.addEventListener('click', function () {
           instance.requestPaymentMethod(function (requestPaymentMethodErr, payload) {
             // When the user clicks on the 'Submit payment' button this code will send the
             // encrypted payment information in a variable called a payment method nonce
+            //headers: {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36"},
+            amount = $( "#amount" ).val();
+            
+            alert(amount);
             $.ajax({
-              type: 'POST',
+              type: 'POST',              
               url: '/checkout',
-              data: {'paymentMethodNonce': payload.nonce}
+              crossDomain: true,
+              data: {'paymentMethodNonce': payload.nonce, 'amount': amount}
             }).done(function(result) {
               // Tear down the Drop-in UI
-              instance.teardown(function (teardownErr) {
-                if (teardownErr) {
-                  console.error('Could not tear down Drop-in UI!');
-                } else {
-                  console.info('Drop-in UI has been torn down!');
-                  // Remove the 'Submit payment' button
-                  $('#submit-button').remove();
-                }
-              });
-    
               if (result.success) {
-                $('#checkout-message').html('<h1>Success</h1><p>Your Drop-in UI is working! Check your <a href="https://sandbox.braintreegateway.com/login">sandbox Control Panel</a> for your test transactions.</p><p>Refresh to try another transaction.</p>');
-              } else {
-                console.log(result);
-                $('#checkout-message').html('<h1>Error</h1><p>Check your console.</p>');
-              }
+               console.log(result.data);
+               trans = result.data.id;
+               alert("Transaction id: " + result.data)
+              } else   alert("Transaction Error" )
+    
             });
           });
         });
+
+         //Request a refund
+         refund.addEventListener('click', function() {            
+            alert('refund');
+            $.ajax({
+              type: 'POST',              
+              url: '/refund',
+              crossDomain: true,
+              data: {'transaction_id': trans}
+            }).done(function(result) {
+              // Tear down the Drop-in UI
+              if (result.success) {
+               console.log(result.data);
+               alert("Transaction id: " + result.data)
+              } else   alert("Transaction Error" )
+                             
+            });
+
+          
+
+          });
 
         });
 

@@ -1,11 +1,19 @@
 import braintree
 
 from flask import Flask
+from flask import request
+
+
+
+
 
 app = Flask(__name__,
             static_url_path='', 
             static_folder='web/static',
             template_folder='web/templates')
+
+
+          
 
 gateway = braintree.BraintreeGateway(
     braintree.Configuration(
@@ -29,26 +37,32 @@ def client_token():
 
 #Receive a payment method nonce from client
 @app.route("/checkout", methods=["POST"])
-def create_purchase():
-  nonce_from_the_client = request.form["payment_method_nonce"]
+def checkout():
+  nonce_from_the_client =  request.form["paymentMethodNonce"]
+  amount = request.form["amount"]
+  
   # Use payment method nonce here...
   #Create a transaction
   result = gateway.transaction.sale({
-      "amount": "10.00",
-      "payment_method_nonce": nonce_from_the_client,
-      "device_data": device_data_from_the_client,
+      "amount": "10",
+      "payment_method_nonce": nonce_from_the_client,      
       "options": {
         "submit_for_settlement": True
       } 
-  })
-  return(result)
+  }) 
+  if result.is_success:
+    return (result.transaction.id)
+  else:
+    return (format(result.message))
+ 
+  
 
-@app.route("/refund/<trasanction_id>", methods=["POST"])
-def refund(transaction_id):
-    transaction = gateway.transaction.find(id)
+@app.route("/refund", methods=["POST"])
+def refund():
+    transaction = gateway.transaction.find(request.form["transaction_id"])
     result = {}
     if transaction.status in TRANSACTION_SUCCESS_STATUSES:
-        result = gateway.refund(transaction_id);
+        result = gateway.refund(transaction)
         result = {
             'header': 'Sweet Success!',
             'icon': 'success',
@@ -62,7 +76,7 @@ def refund(transaction_id):
         }
     
 
-    return(result)
+    return(json.dumps(result) )
 
 
 @app.route('/')
